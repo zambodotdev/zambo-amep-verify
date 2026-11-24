@@ -1360,14 +1360,6 @@ def _eval_invocation(self, inv, idx):
         if s.get("disposition") == "not_executed":
             return R("violated", "I11", "server", [],
                      "receipts contradict a not_executed statement")
-    for s in stmts:
-        cnt = sum(1 for e in E if e.get("observed_by") == s.get("observed_by"))
-        if cnt > s["effect_count"]:
-            return R("violated", "I7", "server", [],
-                     "more receipts than the statement counts")
-        if cnt < s["effect_count"]:
-            return I7([{"need": "receipt", "ref": iid}],
-                      "a receipt was lost or withheld")
     # Steps 11-14, per receipt. Effective claims (7.3): the meet keeps the
     # patterns of the narrower (later) set that the wider set subsumes, so
     # the fold runs from the root with each next set as the meet's C1.
@@ -1446,6 +1438,16 @@ def _eval_invocation(self, inv, idx):
                 if "%s->%s" % (d, recip) not in eff_claims["data"]:
                     return R("violated", "I5", "agent", [],
                              "carried data reached an unpermitted recipient")
+    # Step 14a: Section 5.14 rule 6, the receipt counts, after the
+    # per-receipt checks and before the approval (spec 10.2 at 59d0daf).
+    for s in stmts:
+        cnt = sum(1 for e in E if e.get("observed_by") == s.get("observed_by"))
+        if cnt > s["effect_count"]:
+            return R("violated", "I7", "server", [],
+                     "more receipts than the statement counts")
+        if cnt < s["effect_count"]:
+            return I7([{"need": "receipt", "ref": iid}],
+                      "a receipt was lost or withheld")
     # Bodies B (step 14 tail), value grammar, step 15 approvals
     B = self.form_bodies(E)
     for b in B:
